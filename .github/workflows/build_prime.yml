@@ -1,30 +1,5 @@
 name: Build prime kernel
 
-on:
-  workflow_dispatch:
-    inputs:
-      release:
-          description: 'Upload release'
-          type: boolean
-          required: true
-          default: false
-      changelog:
-          description: 'Changelog'
-          type: string
-          required: false
-
-jobs:
-  prepare:
-    runs-on: ubuntu-latest
-    outputs:
-      release_ts: ${{ steps.ts.outputs.release_ts }}
-
-    steps:
-      - name: Generate release date
-        id: ts
-        run: |
-          RELEASE_TS=$(date +'%Y%m%d-%H%M%S')
-          echo "release_ts=$RELEASE_TS" >> $GITHUB_OUTPUT
 
   build:
     runs-on: ubuntu-latest
@@ -35,7 +10,7 @@ jobs:
     strategy:
       matrix:
         device:
-          - { name: r8q, name2: r8qxx, name3: r8qxxx }
+          - { y2q }
 
     steps:
       - name: Checkout repository
@@ -71,23 +46,6 @@ jobs:
             "${{ matrix.device.name2 }}" \
             "${{ matrix.device.name3 }}"
 
-      - name: Generate release notes
-        if: matrix.device.name == 'r8q'
-        run: |
-          : > version.txt
-          echo "**Kernel version:** $(cat out/include/config/kernel.release)  " >> version.txt
-          echo >> version.txt
-          export KHASH="$(git rev-parse HEAD)"
-          echo "**Kernel source:** [$KHASH](https://github.com/pascua28/android_kernel_samsung_sm8250/tree/$KHASH)" >> version.txt
-
-          if [ "${{ github.event.inputs.release }}" = "true" ] && \
-             [ -n "${{ github.event.inputs.changelog }}" ]; then
-            echo >> version.txt
-            echo "**Changelog:**" >> version.txt
-            echo >> version.txt
-            printf "%b\n" "${{ github.event.inputs.changelog }}" >> version.txt
-          fi
-
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
@@ -95,56 +53,3 @@ jobs:
           path: |
             AnyKernel3/
             images/
-
-      - name: Upload release notes
-        if: matrix.device.name == 'r8q'
-        uses: actions/upload-artifact@v5
-        with:
-          name: release-notes
-          path: version.txt
-          retention-days: 1
-
-  release:
-    needs: [prepare, build]
-    if: github.event.inputs.release == 'true'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts/
-
-      - name: Move boot.img and dtbo.img
-        run: |
-          mv artifacts/boot.img boot.img
-          mv artifacts/dtbo.img dtbo.img
-
-      - name: Zip build artifacts
-        run: |
-          cd artifacts
-          for dir in PrimeKernel-*; do
-            (
-              cd "$dir"
-              zip -r "../${dir}.zip" .
-            )
-          done
-
-      - name: Download release version
-        uses: actions/download-artifact@v4
-        with:
-          name: release-notes
-          path: ./
-
-      - name: Upload release assets
-        uses: softprops/action-gh-release@v2
-        with:
-          body_path: version.txt
-          tag_name: "${{ needs.prepare.outputs.release_ts }}"
-          name: "PrimeKernel-${{ needs.prepare.outputs.release_ts }}"
-          files: |
-            artifacts/*.zip
-            boot.img
-            dtbo.img
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
