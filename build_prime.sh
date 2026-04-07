@@ -1,10 +1,8 @@
+
 #!/bin/sh
 
 KERNEL_DIR=$(pwd)
-IMG_DIR="$KERNEL_DIR/images"
 DEVICE="$1"
-
-mkdir "$IMG_DIR"
 
 build_kernel() {
     echo "-----------------------------------------------"
@@ -25,11 +23,12 @@ build_kernel() {
 CONFIG_THINLTO=y
 # CONFIG_LTO_NONE is not set
 CONFIG_LTO_CLANG=y
+# CONFIG_CC_WERROR is not set
 
 CONFIG_LOCALVERSION="-PrimeKernel"
     " >> arch/arm64/configs/temp_defconfig
 
-    make $BUILD_VAR temp_defconfig
+    make $BUILD_VAR temp_defconfig || exit 1
     rm arch/arm64/configs/temp_defconfig
 }
 
@@ -52,46 +51,6 @@ build_dtbo() {
     echo "-----------------------------------------------"
     DTBO_FILES=$(find $(pwd)/out/arch/arm64/boot/dts/samsung/$DEVICE -name kona-sec-$DEVICE-*.dtbo)
     $(pwd)/tools/mkdtimg create $(pwd)/out/dtbo.img --page_size=4096 ${DTBO_FILES}
-    cp $(pwd)/out/dtbo.img "$IMG_DIR/dtbo.img"
-}
-
-build_boot() {
-    echo "-----------------------------------------------"
-    echo "Building boot.img..."
-    echo "-----------------------------------------------"
-    MKBOOTIMG="$(pwd)/mkbootimg/mkbootimg.py"
-    OUT_KERNEL="$(pwd)/out/arch/arm64/boot/Image"
-    DTB_OUT="$(pwd)/out/arch/arm64/boot/dts/dtb"
-    CMDLINE="console=null androidboot.hardware=qcom androidboot.memcg=1 lpm_levels.sleep_disabled=1 video=vfb:640x400,bpp=32,memsize=3072000 msm_rtb.filter=0x237 service_locator.enable=1 androidboot.usbcontroller=a600000.dwc3 swiotlb=2048 printk.devkmsg=on firmware_class.path=/vendor/firmware_mnt/image loop.max_part=7"
-    BASE="0x00000000"
-    KOFFSET="0x00008000"
-    ROFFSET="0x02000000"
-    SECOFFSET="0x00000000"
-    DTBOFFSET="0x01f00000"
-    TAGSOFFSET="0x01e00000"
-    BOARD="SRPUB26A012"
-    PAGESZ="4096"
-    RAMDISK="$(pwd)/boot/ramdisk"
-    MONTH="$(date +%Y-%m)"
-
-    $MKBOOTIMG \
-        --header_version 2 \
-        --kernel "$OUT_KERNEL" \
-        --ramdisk "$RAMDISK" \
-        --dtb "$DTB_OUT" \
-        --cmdline "$CMDLINE" \
-        --header_version 2 \
-        --base "$BASE" \
-        --kernel_offset "$KOFFSET" \
-        --ramdisk_offset "$ROFFSET" \
-        --second_offset "$SECOFFSET" \
-        --dtb_offset "$DTBOFFSET" \
-        --tags_offset "$TAGSOFFSET" \
-        --board "$BOARD" \
-        --pagesize "$PAGESZ" \
-        --os_version 16.0.0 \
-        --os_patch_level "$MONTH" \
-        --output "$IMG_DIR/boot.img"
 }
 
 prepare_ak3() {
@@ -104,11 +63,13 @@ prepare_ak3() {
 
     sed -i "s/^device\.name1=.*/device.name1=${DEVICE}/" anykernel.sh
 
+    ZIP_NAME="PrimeKernel-${DEVICE}.zip"
+    zip -r "../${ZIP_NAME}" *
+
     cd "$KERNEL_DIR"
 }
 
 build_kernel
 build_dtb
 build_dtbo
-build_boot
 prepare_ak3
