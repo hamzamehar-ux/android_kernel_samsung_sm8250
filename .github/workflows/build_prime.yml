@@ -1,16 +1,15 @@
 name: Build prime kernel
 
+on:
+  workflow_dispatch:
 
+jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      release_ts: ${{ steps.ts.outputs.release_ts }}
-    needs: prepare
-
     strategy:
       matrix:
-        device:
-          - { y2q }
+        include:
+          - device: [y2q]
 
     steps:
       - name: Checkout repository
@@ -21,6 +20,7 @@ name: Build prime kernel
 
       - name: Install build tools
         run: |
+          sudo apt-get update
           sudo apt-get install -y \
             build-essential \
             git \
@@ -33,23 +33,19 @@ name: Build prime kernel
       - name: Download latest Google clang
         run: |
           wget -O llvm.tar.zst https://github.com/Ylarod/setup-ndk-clang/releases/download/prebuilt/clang-linux-x86-ndk-r29-r563880c.tar.zst
-          mkdir llvm-21; cd llvm-21
-          tar -I unzstd -xf ../llvm.tar.zst
-          rm ../llvm.tar.zst
-          cd ..
+          mkdir llvm-21
+          tar -I unzstd -xf llvm.tar.zst -C llvm-21
+          rm llvm.tar.zst
 
       - name: Build kernel
         run: |
           chmod +x build_prime.sh
-          bash build_prime.sh \
-            "${{ matrix.device.name }}" \
-            "${{ matrix.device.name2 }}" \
-            "${{ matrix.device.name3 }}"
+          bash build_prime.sh "${{ matrix.device }}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
-          name: PrimeKernel-${{ matrix.device.name }}-${{ needs.prepare.outputs.release_ts }}
+          name: PrimeKernel-${{ matrix.device }}
           path: |
             AnyKernel3/
             images/
