@@ -3,8 +3,6 @@
 KERNEL_DIR=$(pwd)
 IMG_DIR="$KERNEL_DIR/images"
 DEVICE="$1"
-DEVICE2="$2"
-DEVICE3="$3"
 
 mkdir "$IMG_DIR"
 
@@ -105,8 +103,6 @@ prepare_ak3() {
     mv "$KERNEL_DIR/out/arch/arm64/boot/dts/dtb" dtb
 
     sed -i "s/^device\.name1=.*/device.name1=${DEVICE}/" anykernel.sh
-    sed -i "s/^device\.name2=.*/device.name2=${DEVICE2}/" anykernel.sh
-    sed -i "s/^device\.name3=.*/device.name2=${DEVICE3}/" anykernel.sh
 
     cd "$KERNEL_DIR"
 }
