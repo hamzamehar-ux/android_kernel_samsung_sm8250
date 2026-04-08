@@ -26,7 +26,7 @@ CONFIG_LTO_CLANG=y
 CONFIG_LOCALVERSION="-PrimeKernel"
     " >> arch/arm64/configs/temp_defconfig
 
-    make $BUILD_VAR temp_defconfig || exit 1
+    make $BUILD_VAR temp_defconfig
     rm arch/arm64/configs/temp_defconfig
 }
 
