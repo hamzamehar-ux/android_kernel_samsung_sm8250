@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        device: [y2q]
+        device: [y2q, y2qxx, y2qxxx]
 
     steps:
       - name: Checkout repository
@@ -39,7 +39,7 @@ jobs:
       - name: Build kernel
         run: |
           chmod +x build_prime.sh
-          bash build_prime.sh y2q
+          bash build_prime.sh ${{ matrix.device }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
