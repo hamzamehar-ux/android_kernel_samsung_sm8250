@@ -1,4 +1,3 @@
-
 #!/bin/sh
 
 KERNEL_DIR=$(pwd)
