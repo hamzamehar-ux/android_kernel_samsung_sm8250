@@ -50,7 +50,7 @@ jobs:
             out/arch/arm64/boot/Image
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: PrimeKernel-${{ matrix.device }}
           path: PrimeKernel-${{ matrix.device }}.zip
