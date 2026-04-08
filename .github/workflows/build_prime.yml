@@ -1,4 +1,3 @@
-
 name: Build prime kernel
 
 on:
@@ -9,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        device: [x1q, y2q,]
+        device: [y2q]
 
     steps:
       - name: Checkout repository
@@ -40,10 +39,10 @@ jobs:
       - name: Build kernel
         run: |
           chmod +x build_prime.sh
-          bash build_prime.sh "${{ matrix.device }}"
+          bash build_prime.sh y2q
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: PrimeKernel-${{ matrix.device }}
           path: "*.zip"
